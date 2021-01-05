@@ -25,19 +25,28 @@ class Stage:
         return self.name
 
 
-class ScheduleItem:
-    ruleset = None
-    gamemode = None
-    stages = []
-    start = None
-    end = None
+class Weapon:
+    wid = None
+    name = None
+    image = None
+    thumbnail = None
 
     def __init__(self, entry):
-        self.ruleset = (entry['rule']['name'], entry['rule']['key'])
-        self.gamemode = (entry['game_mode']['name'], entry['game_mode']['key'])
-        self.stages = [Stage(x) for x in [entry['stage_a'], entry['stage_b']]]
-        self.start = datetime.datetime.fromtimestamp(int(entry['start_time']))
-        self.end = datetime.datetime.fromtimestamp(int(entry['end_time']))
+        self.wid = entry['id']
+        self.name = entry['name']
+        self.image = entry['image']
+        self.thumbnail = entry['thumbnail']
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class GenericScheduleItem:
+    start = None
+    end = None
 
     def time_range(self):
         time_format = '%b %-d %-I:%M%p'
@@ -46,6 +55,19 @@ class ScheduleItem:
     def start_string(self):
         time_format = '%-I:%M%p'
         return f'{self.start.strftime(time_format)} {tools.get_today_tomorrow(self.start)}'
+
+
+class ScheduleItem(GenericScheduleItem):
+    ruleset = None
+    gamemode = None
+    stages = []
+
+    def __init__(self, entry):
+        self.ruleset = (entry['rule']['name'], entry['rule']['key'])
+        self.gamemode = (entry['game_mode']['name'], entry['game_mode']['key'])
+        self.stages = [Stage(x) for x in [entry['stage_a'], entry['stage_b']]]
+        self.start = datetime.datetime.fromtimestamp(int(entry['start_time']))
+        self.end = datetime.datetime.fromtimestamp(int(entry['end_time']))
 
     def __str__(self):
         gamemode = self.gamemode[0]
@@ -58,6 +80,25 @@ class ScheduleItem:
         return self.__str__()
 
 
+class SalmonScheduleItem(GenericScheduleItem):
+    weapons = None
+    stage = None
+
+    def __init__(self, entry):
+        self.stage = entry['stage']['name']
+        self.start = datetime.datetime.fromtimestamp(int(entry['start_time']))
+        self.end = datetime.datetime.fromtimestamp(int(entry['end_time']))
+        self.weapons = [Weapon(x['weapon']) for x in entry['weapons']]
+
+    def __str__(self):
+        time_range = self.time_range()
+        weapon_string = tools.english_list(map(str, self.weapons))
+        return f'Salmon Run on {self.stage} with the {weapon_string} at {time_range}'
+
+    def __repr__(self):
+        return self.__str__()
+
+
 def get_schedule():
     with open('private/auth.json') as file_:
         splatoon_data = json.loads(file_.read())['splatoon']
@@ -65,6 +106,18 @@ def get_schedule():
         cookies = splatoon_data['cookies']
 
     url = f'{BASE_URL}/api/schedules'
+    req = requests.get(url, headers=app_head, cookies=cookies)
+
+    return req.json()
+
+
+def get_salmon_schedule():
+    with open('private/auth.json') as file_:
+        splatoon_data = json.loads(file_.read())['splatoon']
+        app_head = splatoon_data['headers']
+        cookies = splatoon_data['cookies']
+
+    url = f'{BASE_URL}/api/coop_schedules'
     req = requests.get(url, headers=app_head, cookies=cookies)
 
     return req.json()
@@ -133,9 +186,7 @@ def stages_notification(blocks, include_gamemode=True, include_ruleset=False,
 
 
 if __name__ == '__main__':
-    print(get_current_stages())
-    # schedule = get_schedule()
-    # filtered = search_schedule(lambda x: x.ruleset[1], 'rainmaker')
-    # print(stages_notification(filtered))
-    # print('\n'.join(map(str, filtered)))
+    salmon = get_salmon_schedule()
+    details = [SalmonScheduleItem(x) for x in salmon['details']]
+    print(details)
 

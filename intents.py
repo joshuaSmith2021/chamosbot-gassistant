@@ -1,3 +1,4 @@
+import datetime
 import json
 from multiprocessing import Pool
 
@@ -55,10 +56,28 @@ def schedule_now(request):
     return responses.GoogleAssistantResponse(result)
 
 
+def salmon_weapons_get(request):
+    current_salmon_stages = splatoon.get_salmon_schedule()
+    current = splatoon.SalmonScheduleItem(current_salmon_stages['details'][0])
+
+    weapon_string = tools.english_list(map(str, current.weapons))
+
+    time_string = None
+    if datetime.datetime.now() < current.end:
+        time_string = current.end.strftime('until %B %-d at %-I:%M%p')
+    else:
+        time_string = current.end.strftime('starting on %B %-d at %-I:%M%p')
+
+    result = f'You can use the {weapon_string}, {time_string}.'
+
+    return responses.GoogleAssistantResponse(result)
+
+
 INTENTS = {
     'friend list': friend_list,
     'ruleset get': ruleset_get,
-    'schedule now': schedule_now
+    'schedule now': schedule_now,
+    'salmon weapons get': salmon_weapons_get
 }
 
 def get_response(request):
@@ -67,5 +86,4 @@ def get_response(request):
 
 
 if __name__ == '__main__':
-    pass
-    # print(friend_list())
+    print(salmon_weapons_get(None))
