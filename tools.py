@@ -4,6 +4,8 @@ def english_list(_list):
         return ''
     elif len(_list) == 1:
         return _list[0]
+    elif len(_list) == 2:
+        return ' and '.join(_list)
     else:
         body = ', '.join(_list[:-1])
         result = f'{body}, and {_list[-1]}'
