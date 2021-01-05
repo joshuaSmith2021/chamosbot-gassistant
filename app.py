@@ -16,3 +16,7 @@ def main():
     response = str(intents.get_response(request.get_json()))
     return response
 
+@app.route('/test')
+def hello_world():
+    return 'Hello world!'
+
