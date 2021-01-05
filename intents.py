@@ -37,8 +37,6 @@ def ruleset_get(request):
     requested_ruleset = request['queryResult']['parameters']['rulesets']
     blocks = splatoon.search_schedule(lambda x: x.ruleset[1], requested_ruleset)
 
-    print(requested_ruleset, splatoon.RULESETS)
-
     stages_string = splatoon.stages_notification(blocks)
     ruleset_string = [x['name'] for x in splatoon.RULESETS if x['key'] == requested_ruleset][0]
 
@@ -47,13 +45,20 @@ def ruleset_get(request):
     return responses.GoogleAssistantResponse(result)
 
 
-def schedule_get(request):
-    pass
+def schedule_now(request):
+    current_stages = splatoon.get_current_stages()
+    stages_string = splatoon.stages_notification(current_stages, include_ruleset=True,
+                                                 include_stage=True, include_time=False)
+
+    result = f'Here\'s what\'s available: {stages_string}.'
+
+    return responses.GoogleAssistantResponse(result)
 
 
 INTENTS = {
     'friend list': friend_list,
-    'ruleset get': ruleset_get
+    'ruleset get': ruleset_get,
+    'schedule now': schedule_now
 }
 
 def get_response(request):

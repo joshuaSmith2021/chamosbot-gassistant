@@ -85,6 +85,18 @@ def search_schedule(focus, *args):
     return filtered
 
 
+def get_current_stages():
+    schedule = get_schedule()
+    current_stages = []
+
+    for gamemode in GAMEMODES:
+        current_entries = schedule[gamemode['id']]
+        first = [ScheduleItem(x) for x in current_entries][0]
+        current_stages.append(first)
+
+    return current_stages
+
+
 def stages_notification(blocks, include_gamemode=True, include_ruleset=False,
                         include_stage=False, include_time=True):
     with open('data/splatoon2/gamemodes.json') as file_:
@@ -105,7 +117,7 @@ def stages_notification(blocks, include_gamemode=True, include_ruleset=False,
         for block in current_blocks:
             current_string = []
             if include_ruleset:
-                current_string.append(block.ruleset[1])
+                current_string.append(block.ruleset[0])
 
             if include_stage:
                 current_string.append(f"on {' and '.join(map(str, block.stages))}")
@@ -121,8 +133,9 @@ def stages_notification(blocks, include_gamemode=True, include_ruleset=False,
 
 
 if __name__ == '__main__':
+    print(get_current_stages())
     # schedule = get_schedule()
-    filtered = search_schedule(lambda x: x.ruleset[1], 'rainmaker')
-    print(stages_notification(filtered))
-    print('\n'.join(map(str, filtered)))
+    # filtered = search_schedule(lambda x: x.ruleset[1], 'rainmaker')
+    # print(stages_notification(filtered))
+    # print('\n'.join(map(str, filtered)))
 
