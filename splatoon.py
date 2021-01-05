@@ -3,7 +3,15 @@ import json
 
 import requests
 
+import tools
+
 BASE_URL = 'https://app.splatoon2.nintendo.net'
+
+with open('data/splatoon2/gamemodes.json') as file_:
+    GAMEMODES = json.loads(file_.read())
+
+with open('data/splatoon2/rulesets.json') as file_:
+    RULESETS = json.loads(file_.read())
 
 class Stage:
     name = None
@@ -34,6 +42,10 @@ class ScheduleItem:
     def time_range(self):
         time_format = '%b %-d %-I:%M%p'
         return f'{self.start.strftime(time_format)} – {self.end.strftime(time_format)}'
+
+    def start_string(self):
+        time_format = '%-I:%M%p'
+        return f'{self.start.strftime(time_format)} {tools.get_today_tomorrow(self.start)}'
 
     def __str__(self):
         gamemode = self.gamemode[0]
@@ -73,11 +85,44 @@ def search_schedule(focus, *args):
     return filtered
 
 
+def stages_notification(blocks, include_gamemode=True, include_ruleset=False,
+                        include_stage=False, include_time=True):
+    with open('data/splatoon2/gamemodes.json') as file_:
+        gamemodes = json.loads(file_.read())
+
+    result = []
+
+    for gamemode in gamemodes:
+        current_blocks = [x for x in blocks if gamemode['id'] == x.gamemode[1]]
+
+        if len(current_blocks) == 0:
+            continue
+
+        mode_result = []
+        if include_gamemode:
+            mode_result.append(gamemode['name'])
+
+        for block in current_blocks:
+            current_string = []
+            if include_ruleset:
+                current_string.append(block.ruleset[1])
+
+            if include_stage:
+                current_string.append(f"on {' and '.join(map(str, block.stages))}")
+
+            if include_time:
+                current_string.append(f'at {block.start_string()}')
+
+            mode_result.append(' '.join(current_string))
+
+        result.append(', '.join(mode_result))
+
+    return '. '.join(result)
+
+
 if __name__ == '__main__':
     # schedule = get_schedule()
     filtered = search_schedule(lambda x: x.ruleset[1], 'rainmaker')
+    print(stages_notification(filtered))
     print('\n'.join(map(str, filtered)))
-
-    # for entry in schedule['gachi']:
-    #     print(ScheduleItem(entry))
 
